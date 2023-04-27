@@ -4,8 +4,8 @@
   <version>1.0.0</version>
   <description>The mujoco_hog package</description>
 
-  <url type="repository">https://github.com/DavidPL1/mujoco_ros_pkgs</url>
-  <url type="bugtracker">https://github.com/DavidPL1/mujoco_ros_pkgs/issues</url>
+  <url type="repository">https://github.com/ubi-agni/mujoco_hog_plugin</url>
+  <url type="bugtracker">https://github.com/ubi-agni/mujoco_hog_plugin/issues</url>
 
   <maintainer email="jleichert@techfak.uni-bielefeld.de">Julian Leichert</maintainer>
   <author>Julian Leichert</author>
