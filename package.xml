@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package format="2">
-  <name>mujoco_ros_hog</name>
+  <name>mujoco_hog</name>
   <version>1.0.0</version>
   <description>The mujoco_hog package</description>
 
@@ -17,6 +17,6 @@
   <depend>mujoco_ros</depend>
 
   <export>
-    <mujoco_ros plugin="${prefix}/mujoco_ros_hog_plugin.xml" />
+    <mujoco_ros plugin="${prefix}/mujoco_hog_plugin.xml" />
   </export>
 </package>

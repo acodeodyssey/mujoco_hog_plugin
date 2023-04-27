@@ -1,5 +1,5 @@
 MujocoPlugins:
-  - type: mujoco_ros_hog/MujocoHogPlugin
+  - type: mujoco_hog/MujocoHogPlugin
     hogBodies:
       hogBox:
         desiredPose:

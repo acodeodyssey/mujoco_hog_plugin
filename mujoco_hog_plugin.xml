@@ -1,6 +1,6 @@
-<library path="lib/libmujoco_ros_hog">
+<library path="lib/libmujoco_hog">
   <class
-    name="mujoco_ros_hog/MujocoHogPlugin"
+    name="mujoco_hog/MujocoHogPlugin"
     type="mujoco_ros_hog::MujocoHogPlugin"
     base_class_type="MujocoSim::MujocoPlugin">
     <description>
