@@ -38,7 +38,6 @@
 
 #pragma once
 
-
 #include <string>
 
 #include <mujoco_ros/plugin_utils.h>
@@ -48,12 +47,12 @@
 #include <mujoco_ros/plugin_utils.h>
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
+#include <mujoco_ros_msgs/SetSolverParameters.h>
+#include <mujoco_ros_msgs/SetWeldConstraintParameters.h>
 
+namespace mujoco_ros_hog {
 
-
-namespace mujoco_ros_hog{
-
-class MujocoHogPlugin: public MujocoSim::MujocoPlugin
+class MujocoHogPlugin : public MujocoSim::MujocoPlugin
 {
 public:
 	~MujocoHogPlugin() = default;
@@ -64,22 +63,36 @@ public:
 	// Called on reset
 	void reset() override;
 
-
 	void controlCallback(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d);
 
-	bool registerHog(MujocoSim::mjModelPtr m, std::string bodyname,std::vector<double> desiredPose={});
+	bool registerHog(MujocoSim::mjModelPtr m, std::string bodyname, std::vector<double> desiredPose = {});
 
 	void updateHog(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d);
 
+	void setSolverParameters(std::string bodyName, mjtNum solimp[5], mjtNum solref[2]);
+
+	void changeEqualityConstraints(std::string bodyName = "", int eq_active = 1);
+
+	void setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4]);
+
+	void setWeldConstraintParameters(std::string bodyName, bool active, double torqueScale);
+
+	bool setSolverParametersCB(mujoco_ros_msgs::SetSolverParameters::Request &req,
+	                           mujoco_ros_msgs::SetSolverParameters::Response &resp);
+
+	bool setWeldConstraintParametersCB(mujoco_ros_msgs::SetWeldConstraintParameters::Request &req,
+	                                   mujoco_ros_msgs::SetWeldConstraintParameters::Response &resp);
+
 protected:
-
-
-	bool active = true;
+	bool active   = true;
+	int eq_active = 1;
+	int last_eq   = 1;
 	mjtNum last_time;
-	std::map<std::string,std::vector<double>> hog_bodies_;
+	MujocoSim::mjModelPtr m;
+	std::map<std::string, std::vector<double>> hog_bodies_;
 	boost::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 	ros::ServiceServer ros_hog_server_;
-
+	std::vector<ros::ServiceServer> service_servers_;
 };
 
 } // namespace mujoco_ros_hog
