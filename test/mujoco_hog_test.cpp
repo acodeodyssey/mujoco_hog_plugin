@@ -114,6 +114,7 @@ TEST_F(MujocoRosBaseFixture, set_solver_parameters)
 		hogPlugin = dynamic_cast<mujoco_ros_hog::MujocoHogPlugin *>(p.get());
 		if (hogPlugin != nullptr) {
 			ROS_INFO_STREAM("Plugin loaded");
+			break;
 		} else {
 			return;
 		}
