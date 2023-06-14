@@ -98,6 +98,8 @@ bool MujocoHogPlugin::load(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d)
 	service_servers_.push_back(node_handle_->advertiseService("mujoco_ros_hog/set_weld_constraint_parameters",
 	                                                          &MujocoHogPlugin::setWeldConstraintParametersCB, this));
 
+	service_servers_.push_back(
+	    node_handle_->advertiseService("mujoco_ros_hog/set_geom_position", &MujocoHogPlugin::setGeomPositionCB, this));
 	ROS_INFO_NAMED("mujoco_ros_hog", "Hog initialized");
 	return true;
 }
@@ -131,6 +133,19 @@ bool MujocoHogPlugin::setWeldConstraintParametersCB(mujoco_ros_msgs::SetWeldCons
 	solref[0] = req.parameters.solverParameters.timeconst;
 	solref[1] = req.parameters.solverParameters.dampratio;
 	setSolverParameters(req.parameters.solverParameters.name, solimp, solref);
+	resp.success = true;
+	return true;
+}
+
+bool MujocoHogPlugin::setGeomPositionCB(mujoco_ros_msgs::SetGeomPosition::Request &req,
+                                        mujoco_ros_msgs::SetGeomPosition::Response &resp)
+{
+	if (req.set_position) {
+		mjtNum p[3] = { req.position.pose.position.x, req.position.pose.position.y, req.position.pose.position.z };
+		mjtNum q[4] = { req.position.pose.orientation.w, req.position.pose.orientation.x, req.position.pose.orientation.y,
+			             req.position.pose.orientation.z };
+		setPosition(req.position.name, p, q);
+	}
 	resp.success = true;
 	return true;
 }
@@ -277,6 +292,7 @@ void MujocoHogPlugin::setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4]
 			m->geom_quat[i * m->ngeom + 1] = q[1];
 			m->geom_quat[i * m->ngeom + 2] = q[2];
 			m->geom_quat[i * m->ngeom + 3] = q[3];
+			return;
 		}
 	}
 }

@@ -49,6 +49,7 @@
 #include <tf2_ros/transform_broadcaster.h>
 #include <mujoco_ros_msgs/SetSolverParameters.h>
 #include <mujoco_ros_msgs/SetWeldConstraintParameters.h>
+#include <mujoco_ros_msgs/SetGeomPosition.h>
 
 namespace mujoco_ros_hog {
 
@@ -82,6 +83,9 @@ public:
 
 	bool setWeldConstraintParametersCB(mujoco_ros_msgs::SetWeldConstraintParameters::Request &req,
 	                                   mujoco_ros_msgs::SetWeldConstraintParameters::Response &resp);
+
+	bool setGeomPositionCB(mujoco_ros_msgs::SetGeomPosition::Request &req,
+	                       mujoco_ros_msgs::SetGeomPosition::Response &resp);
 
 protected:
 	bool active   = true;
