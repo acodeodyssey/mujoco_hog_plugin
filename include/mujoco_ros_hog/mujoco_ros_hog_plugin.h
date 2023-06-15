@@ -70,13 +70,13 @@ public:
 
 	void updateHog(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d);
 
-	void setSolverParameters(std::string bodyName, mjtNum solimp[5], mjtNum solref[2]);
+	bool setSolverParameters(std::string bodyName, mjtNum solimp[5], mjtNum solref[2]);
 
 	void changeEqualityConstraints(std::string bodyName = "", int eq_active = 1);
 
-	void setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4]);
+	bool setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4]);
 
-	void setWeldConstraintParameters(std::string bodyName, bool active, double torqueScale);
+	bool setWeldConstraintParameters(std::string bodyName, bool active, double torqueScale);
 
 	bool setSolverParametersCB(mujoco_ros_msgs::SetSolverParameters::Request &req,
 	                           mujoco_ros_msgs::SetSolverParameters::Response &resp);

@@ -111,29 +111,29 @@ bool MujocoHogPlugin::setSolverParametersCB(mujoco_ros_msgs::SetSolverParameters
 	mjtNum solref[2] = {};
 	solimp[0]        = req.solverParameters.dmin;
 	solimp[1] = req.solverParameters.dmax, solimp[2] = req.solverParameters.width;
-	solimp[3] = req.solverParameters.midpoint;
-	solimp[4] = req.solverParameters.power;
-	solref[0] = req.solverParameters.timeconst;
-	solref[1] = req.solverParameters.dampratio;
-	setSolverParameters(req.solverParameters.name, solimp, solref);
-	resp.success = true;
+	solimp[3]    = req.solverParameters.midpoint;
+	solimp[4]    = req.solverParameters.power;
+	solref[0]    = req.solverParameters.timeconst;
+	solref[1]    = req.solverParameters.dampratio;
+	resp.success = setSolverParameters(req.solverParameters.name, solimp, solref);
 	return true;
 }
 
 bool MujocoHogPlugin::setWeldConstraintParametersCB(mujoco_ros_msgs::SetWeldConstraintParameters::Request &req,
                                                     mujoco_ros_msgs::SetWeldConstraintParameters::Response &resp)
 {
-	setWeldConstraintParameters(req.parameters.solverParameters.name, req.parameters.active, req.parameters.torquescale);
+	bool weldResult  = setWeldConstraintParameters(req.parameters.solverParameters.name, req.parameters.active,
+                                                 req.parameters.torquescale);
 	mjtNum solimp[5] = {};
 	mjtNum solref[2] = {};
 	solimp[0]        = req.parameters.solverParameters.dmin;
 	solimp[1] = req.parameters.solverParameters.dmax, solimp[2] = req.parameters.solverParameters.width;
-	solimp[3] = req.parameters.solverParameters.midpoint;
-	solimp[4] = req.parameters.solverParameters.power;
-	solref[0] = req.parameters.solverParameters.timeconst;
-	solref[1] = req.parameters.solverParameters.dampratio;
-	setSolverParameters(req.parameters.solverParameters.name, solimp, solref);
-	resp.success = true;
+	solimp[3]        = req.parameters.solverParameters.midpoint;
+	solimp[4]        = req.parameters.solverParameters.power;
+	solref[0]        = req.parameters.solverParameters.timeconst;
+	solref[1]        = req.parameters.solverParameters.dampratio;
+	bool solveResult = setSolverParameters(req.parameters.solverParameters.name, solimp, solref);
+	resp.success     = (weldResult & solveResult);
 	return true;
 }
 
@@ -144,9 +144,10 @@ bool MujocoHogPlugin::setGeomPositionCB(mujoco_ros_msgs::SetGeomPosition::Reques
 		mjtNum p[3] = { req.position.pose.position.x, req.position.pose.position.y, req.position.pose.position.z };
 		mjtNum q[4] = { req.position.pose.orientation.w, req.position.pose.orientation.x, req.position.pose.orientation.y,
 			             req.position.pose.orientation.z };
-		setPosition(req.position.name, p, q);
+		resp.success = setPosition(req.position.name, p, q);
+	} else {
+		resp.success = true;
 	}
-	resp.success = true;
 	return true;
 }
 
@@ -250,7 +251,7 @@ void MujocoHogPlugin::changeEqualityConstraints(std::string bodyName, int eqActi
 	}
 }
 
-void MujocoHogPlugin::setWeldConstraintParameters(std::string bodyName, bool active, double torqueScale)
+bool MujocoHogPlugin::setWeldConstraintParameters(std::string bodyName, bool active, double torqueScale)
 {
 	unsigned int fidx = mj_name2id(m.get(), mjOBJ_XBODY, bodyName.c_str());
 	for (int i = 0; i < m->neq; i++) {
@@ -258,15 +259,19 @@ void MujocoHogPlugin::setWeldConstraintParameters(std::string bodyName, bool act
 			ROS_INFO_STREAM(m->eq_type[i]);
 			m->eq_active[i]                = active;
 			m->eq_data[i * mjNEQDATA + 10] = torqueScale;
-			return;
+			return true;
 		}
 	}
+	return false;
 }
 
-void MujocoHogPlugin::setSolverParameters(std::string bodyName, mjtNum solimp[5], mjtNum solref[2])
+bool MujocoHogPlugin::setSolverParameters(std::string bodyName, mjtNum solimp[5], mjtNum solref[2])
 {
 	// torque is in field 10
 	unsigned int fidx = mj_name2id(m.get(), mjOBJ_XBODY, bodyName.c_str());
+	if (solimp[1] < solimp[0] | solimp[4] < 1) {
+		return false;
+	}
 	for (int i = 0; i < m->neq; i++) {
 		if (fidx == m->eq_obj1id[i]) {
 			m->eq_solimp[i * mjNEQDATA]     = solimp[0];
@@ -276,11 +281,13 @@ void MujocoHogPlugin::setSolverParameters(std::string bodyName, mjtNum solimp[5]
 			m->eq_solimp[i * mjNEQDATA + 4] = solimp[4];
 			m->eq_solref[i * mjNEQDATA]     = solref[0];
 			m->eq_solref[i * mjNEQDATA + 1] = solref[1];
+			return true;
 		}
 	}
+	return false;
 }
 
-void MujocoHogPlugin::setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4])
+bool MujocoHogPlugin::setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4])
 {
 	unsigned int fidx = mj_name2id(m.get(), mjOBJ_XBODY, bodyName.c_str());
 	for (int i = 0; i < m->neq; i++) {
@@ -292,9 +299,10 @@ void MujocoHogPlugin::setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4]
 			m->geom_quat[i * m->ngeom + 1] = q[1];
 			m->geom_quat[i * m->ngeom + 2] = q[2];
 			m->geom_quat[i * m->ngeom + 3] = q[3];
-			return;
+			return true;
 		}
 	}
+	return false;
 }
 
 bool MujocoHogPlugin::registerHog(MujocoSim::mjModelPtr m, std::string bodyname, std::vector<double> desiredPose)
