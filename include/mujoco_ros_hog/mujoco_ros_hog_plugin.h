@@ -60,7 +60,6 @@ public:
 
 	// Overload entry point
 	bool load(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d) override;
-
 	// Called on reset
 	void reset() override;
 
@@ -88,11 +87,12 @@ public:
 	                       mujoco_ros_msgs::SetGeomPosition::Response &resp);
 
 protected:
-	bool active   = true;
+	bool active   = false;
 	int eq_active = 1;
 	int last_eq   = 1;
 	mjtNum last_time;
 	MujocoSim::mjModelPtr m;
+	MujocoSim::mjDataPtr d;
 	std::map<std::string, std::vector<double>> hog_bodies_;
 	boost::shared_ptr<tf2_ros::Buffer> tf_buffer_;
 	ros::ServiceServer ros_hog_server_;

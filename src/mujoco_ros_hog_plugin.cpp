@@ -80,6 +80,8 @@ bool MujocoHogPlugin::load(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d)
 		}
 	}
 
+	this->m = m;
+	this->d = d;
 	tf_buffer_.reset(new tf2_ros::Buffer());
 	service_servers_.push_back(node_handle_->advertiseService<std_srvs::SetBool::Request, std_srvs::SetBool::Response>(
 	    "mujoco_ros_hog/set_active", [&](auto &request, auto &response) {
@@ -101,6 +103,7 @@ bool MujocoHogPlugin::load(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d)
 	service_servers_.push_back(
 	    node_handle_->advertiseService("mujoco_ros_hog/set_geom_position", &MujocoHogPlugin::setGeomPositionCB, this));
 	ROS_INFO_NAMED("mujoco_ros_hog", "Hog initialized");
+
 	return true;
 }
 
@@ -289,16 +292,21 @@ bool MujocoHogPlugin::setSolverParameters(std::string bodyName, mjtNum solimp[5]
 
 bool MujocoHogPlugin::setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4])
 {
-	unsigned int fidx = mj_name2id(m.get(), mjOBJ_XBODY, bodyName.c_str());
-	for (int i = 0; i < m->neq; i++) {
-		if (fidx == m->geom_bodyid[i]) {
-			m->geom_pos[i * m->ngeom]      = p[0];
-			m->geom_pos[i * m->ngeom + 1]  = p[1];
-			m->geom_pos[i * m->ngeom + 2]  = p[2];
-			m->geom_quat[i * m->ngeom]     = q[0];
-			m->geom_quat[i * m->ngeom + 1] = q[1];
-			m->geom_quat[i * m->ngeom + 2] = q[2];
-			m->geom_quat[i * m->ngeom + 3] = q[3];
+	int bodyid  = mj_name2id(m.get(), mjOBJ_BODY, "hogBox");
+	int qposadr = -1, qveladr = -1;
+
+	// make sure we have a floating body: it has a single free joint
+	if (bodyid >= 0 && m->body_jntnum[bodyid] == 1 && m->jnt_type[m->body_jntadr[bodyid]] == mjJNT_FREE) {
+		// extract the addresses from the joint specification
+		qposadr = m->jnt_qposadr[m->body_jntadr[bodyid]];
+		if (qposadr != -1) {
+			d->qpos[qposadr]     = p[0];
+			d->qpos[qposadr + 1] = p[1];
+			d->qpos[qposadr + 2] = p[2];
+			d->qpos[qposadr + 3] = q[0];
+			d->qpos[qposadr + 4] = q[1];
+			d->qpos[qposadr + 5] = q[2];
+			d->qpos[qposadr + 6] = q[3];
 			return true;
 		}
 	}
