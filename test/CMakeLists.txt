@@ -12,4 +12,5 @@ add_dependencies(mujoco_hog_test
 
 target_link_libraries(mujoco_hog_test
   ${catkin_LIBRARIES}
+  mujoco_hog
 )
