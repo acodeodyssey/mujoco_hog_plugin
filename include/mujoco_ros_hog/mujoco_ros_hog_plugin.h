@@ -56,7 +56,7 @@ namespace mujoco_ros_hog {
 class MujocoHogPlugin : public MujocoSim::MujocoPlugin
 {
 public:
-	~MujocoHogPlugin() = default;
+	~MujocoHogPlugin() override = default;
 
 	// Overload entry point
 	bool load(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d) override;
@@ -69,14 +69,6 @@ public:
 
 	void updateHog(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d);
 
-	bool setSolverParameters(std::string bodyName, mjtNum solimp[5], mjtNum solref[2]);
-
-	void changeEqualityConstraints(std::string bodyName = "", int eq_active = 1);
-
-	bool setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4]);
-
-	bool setWeldConstraintParameters(std::string bodyName, bool active, double torqueScale);
-
 	bool setSolverParametersCB(mujoco_ros_msgs::SetSolverParameters::Request &req,
 	                           mujoco_ros_msgs::SetSolverParameters::Response &resp);
 
@@ -87,6 +79,16 @@ public:
 	                       mujoco_ros_msgs::SetGeomPosition::Response &resp);
 
 protected:
+	bool setSolverParameters(std::string bodyName, mjtNum solimp[5], mjtNum solref[2]);
+
+	void changeEqualityConstraints(std::string bodyName = "", int eq_active = 1);
+
+	void updateEqRelPos(std::string bodyName, mjtNum p[3], mjtNum q[4]);
+
+	bool setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4]);
+
+	bool setWeldConstraintParameters(std::string bodyName, bool active, double torqueScale);
+
 	bool active   = false;
 	int eq_active = 1;
 	int last_eq   = 1;

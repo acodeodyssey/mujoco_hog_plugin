@@ -103,7 +103,6 @@ bool MujocoHogPlugin::load(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d)
 	service_servers_.push_back(
 	    node_handle_->advertiseService("mujoco_ros_hog/set_geom_position", &MujocoHogPlugin::setGeomPositionCB, this));
 	ROS_INFO_NAMED("mujoco_ros_hog", "Hog initialized");
-
 	return true;
 }
 
@@ -157,7 +156,7 @@ bool MujocoHogPlugin::setGeomPositionCB(mujoco_ros_msgs::SetGeomPosition::Reques
 void MujocoHogPlugin::controlCallback(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d)
 {
 	if (d->time != last_time && active == true) {
-		updateHog(m, d);
+		// updateHog(m, d);
 	}
 	last_time = d->time;
 }
@@ -270,29 +269,49 @@ bool MujocoHogPlugin::setWeldConstraintParameters(std::string bodyName, bool act
 
 bool MujocoHogPlugin::setSolverParameters(std::string bodyName, mjtNum solimp[5], mjtNum solref[2])
 {
-	// torque is in field 10
 	unsigned int fidx = mj_name2id(m.get(), mjOBJ_XBODY, bodyName.c_str());
 	if (solimp[1] < solimp[0] | solimp[4] < 1) {
 		return false;
 	}
 	for (int i = 0; i < m->neq; i++) {
 		if (fidx == m->eq_obj1id[i]) {
-			m->eq_solimp[i * mjNEQDATA]     = solimp[0];
-			m->eq_solimp[i * mjNEQDATA + 1] = solimp[1];
-			m->eq_solimp[i * mjNEQDATA + 2] = solimp[2];
-			m->eq_solimp[i * mjNEQDATA + 3] = solimp[3];
-			m->eq_solimp[i * mjNEQDATA + 4] = solimp[4];
-			m->eq_solref[i * mjNEQDATA]     = solref[0];
-			m->eq_solref[i * mjNEQDATA + 1] = solref[1];
+			for (int j = 0; j < 5; j++) {
+				m->eq_solimp[i + j] = solimp[j];
+				if (j < 2) {
+					m->eq_solref[i + j] = solref[j];
+				}
+			}
 			return true;
 		}
 	}
 	return false;
 }
 
+void MujocoHogPlugin::updateEqRelPos(std::string bodyName, mjtNum p[3], mjtNum q[4])
+{
+	unsigned int fidx = mj_name2id(m.get(), mjOBJ_XBODY, bodyName.c_str());
+	for (int i = 0; i < m->neq; i++) {
+		if (fidx == m->eq_obj1id[i]) {
+			int id2 = m->eq_obj2id[i];
+			mjtNum quat1[4];
+			mjtNum quat2[4];
+			mju_negQuat(quat1, q); // neg(q0)
+			mju_mulQuat(quat2, quat1, d->xquat + 4 * id2); // relpose = neg(q0) * q1;
+			for (int j = 0; j < 7; j++) {
+				if (j < 3) {
+					m->eq_data[i * mjNEQDATA + j + 3] = -1 * p[j];
+				} else {
+					m->eq_data[i * mjNEQDATA + j + 3] = quat2[j - 3];
+				}
+				ROS_INFO_STREAM(m->eq_data[i * mjNEQDATA + j + 3]);
+			}
+		}
+	}
+}
+
 bool MujocoHogPlugin::setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4])
 {
-	int bodyid  = mj_name2id(m.get(), mjOBJ_BODY, "hogBox");
+	int bodyid  = mj_name2id(m.get(), mjOBJ_BODY, bodyName.c_str());
 	int qposadr = -1, qveladr = -1;
 
 	// make sure we have a floating body: it has a single free joint
@@ -307,6 +326,7 @@ bool MujocoHogPlugin::setPosition(std::string bodyName, mjtNum p[3], mjtNum q[4]
 			d->qpos[qposadr + 4] = q[1];
 			d->qpos[qposadr + 5] = q[2];
 			d->qpos[qposadr + 6] = q[3];
+			updateEqRelPos(bodyName, p, q);
 			return true;
 		}
 	}
