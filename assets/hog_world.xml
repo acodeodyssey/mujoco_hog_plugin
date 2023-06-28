@@ -20,6 +20,6 @@
         <geom name="ground_plane" type="plane" size="5 5 10" material="MatPlane" rgba="1 1 1 1"/>
     </worldbody>
     <equality>
-        <weld body1="hogBox" active="false"/>
+        <weld body1="hogBox" active="true"/>
     </equality>
 </mujoco>
