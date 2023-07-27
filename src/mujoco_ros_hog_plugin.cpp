@@ -237,9 +237,7 @@ void MujocoHogPlugin::updateHog(MujocoSim::mjModelPtr m, MujocoSim::mjDataPtr d)
 void MujocoHogPlugin::changeEqualityConstraints(std::string bodyName, int eqActive)
 {
 	if (bodyName.empty()) {
-		ROS_INFO_STREAM_NAMED("Number of eq ", m->neq);
 		for (int i = 0; i < m->neq; i++) {
-			ROS_INFO_STREAM_NAMED("Eq", i);
 			m->eq_active[i] = eqActive;
 		}
 	} else {
@@ -258,7 +256,6 @@ bool MujocoHogPlugin::setWeldConstraintParameters(std::string bodyName, bool act
 	unsigned int fidx = mj_name2id(m.get(), mjOBJ_XBODY, bodyName.c_str());
 	for (int i = 0; i < m->neq; i++) {
 		if (fidx == m->eq_obj1id[i]) {
-			ROS_INFO_STREAM(m->eq_type[i]);
 			m->eq_active[i]                = active;
 			m->eq_data[i * mjNEQDATA + 10] = torqueScale;
 			return true;
@@ -289,21 +286,19 @@ bool MujocoHogPlugin::setSolverParameters(std::string bodyName, mjtNum solimp[5]
 
 void MujocoHogPlugin::updateEqRelPos(std::string bodyName, mjtNum p[3], mjtNum q[4])
 {
+	mjtNum quat1[4];
+	mjtNum quat2[4];
 	unsigned int fidx = mj_name2id(m.get(), mjOBJ_XBODY, bodyName.c_str());
 	for (int i = 0; i < m->neq; i++) {
 		if (fidx == m->eq_obj1id[i]) {
 			int id2 = m->eq_obj2id[i];
-			mjtNum quat1[4];
-			mjtNum quat2[4];
 			mju_negQuat(quat1, q); // neg(q0)
 			mju_mulQuat(quat2, quat1, d->xquat + 4 * id2); // relpose = neg(q0) * q1;
-			for (int j = 0; j < 7; j++) {
+			for (int j = 0; j < 4; j++) {
 				if (j < 3) {
-					m->eq_data[i * mjNEQDATA + j + 3] = -1 * p[j];
-				} else {
-					m->eq_data[i * mjNEQDATA + j + 3] = quat2[j - 3];
+					m->eq_data[i * mjNEQDATA + j] = p[j];
 				}
-				ROS_INFO_STREAM(m->eq_data[i * mjNEQDATA + j + 3]);
+				m->eq_data[i * mjNEQDATA + j + 6] = quat2[j];
 			}
 		}
 	}
